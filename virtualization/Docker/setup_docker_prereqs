@@ -9,8 +9,8 @@ INSTALL_OPENALPR="${INSTALL_OPENALPR:-yes}"
 INSTALL_FFMPEG="${INSTALL_FFMPEG:-yes}"
 INSTALL_LIBCEC="${INSTALL_LIBCEC:-yes}"
 INSTALL_PHANTOMJS="${INSTALL_PHANTOMJS:-yes}"
-INSTALL_COAP_CLIENT="${INSTALL_COAP_CLIENT:-yes}"
 INSTALL_SSOCR="${INSTALL_SSOCR:-yes}"
+INSTALL_IPERF3="${INSTALL_IPERF3:-yes}"
 
 # Required debian packages for running hass or components
 PACKAGES=(
@@ -23,9 +23,11 @@ PACKAGES=(
   # homeassistant.components.device_tracker.bluetooth_tracker
   bluetooth libglib2.0-dev libbluetooth-dev
   # homeassistant.components.device_tracker.owntracks
-  libsodium13
+  libsodium18
   # homeassistant.components.zwave
   libudev-dev
+  # homeassistant.components.homekit_controller
+  libmpc-dev libmpfr-dev libgmp-dev
 )
 
 # Required debian packages for building dependencies
@@ -59,12 +61,12 @@ if [ "$INSTALL_PHANTOMJS" == "yes" ]; then
   virtualization/Docker/scripts/phantomjs
 fi
 
-if [ "$INSTALL_COAP_CLIENT" == "yes" ]; then
-  virtualization/Docker/scripts/coap_client
-fi
-
 if [ "$INSTALL_SSOCR" == "yes" ]; then
   virtualization/Docker/scripts/ssocr
+fi
+
+if [ "$INSTALL_IPERF3" == "yes" ]; then
+  virtualization/Docker/scripts/iperf3
 fi
 
 # Remove packages

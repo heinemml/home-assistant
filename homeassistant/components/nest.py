@@ -14,9 +14,8 @@ from homeassistant.helpers import discovery
 from homeassistant.const import (
     CONF_STRUCTURE, CONF_FILENAME, CONF_BINARY_SENSORS, CONF_SENSORS,
     CONF_MONITORED_CONDITIONS)
-from homeassistant.loader import get_component
 
-REQUIREMENTS = ['python-nest==3.1.0']
+REQUIREMENTS = ['python-nest==3.7.0']
 
 _CONFIGURING = {}
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +53,7 @@ CONFIG_SCHEMA = vol.Schema({
 
 def request_configuration(nest, hass, config):
     """Request configuration steps from the user."""
-    configurator = get_component('configurator')
+    configurator = hass.components.configurator
     if 'nest' in _CONFIGURING:
         _LOGGER.debug("configurator failed")
         configurator.notify_errors(
@@ -68,7 +67,7 @@ def request_configuration(nest, hass, config):
         setup_nest(hass, nest, config, pin=pin)
 
     _CONFIGURING['nest'] = configurator.request_config(
-        hass, "Nest", nest_configuration_callback,
+        "Nest", nest_configuration_callback,
         description=('To configure Nest, click Request Authorization below, '
                      'log into your Nest account, '
                      'and then enter the resulting PIN'),
@@ -92,7 +91,7 @@ def setup_nest(hass, nest, config, pin=None):
 
     if 'nest' in _CONFIGURING:
         _LOGGER.debug("configuration done")
-        configurator = get_component('configurator')
+        configurator = hass.components.configurator
         configurator.request_done(_CONFIGURING.pop('nest'))
 
     _LOGGER.debug("proceeding with setup")
@@ -169,6 +168,19 @@ class NestDevice(object):
             self.local_structure = conf[CONF_STRUCTURE]
         _LOGGER.debug("Structures to include: %s", self.local_structure)
 
+    def structures(self):
+        """Generate a list of structures."""
+        try:
+            for structure in self.nest.structures:
+                if structure.name in self.local_structure:
+                    yield structure
+                else:
+                    _LOGGER.debug("Ignoring structure %s, not in %s",
+                                  structure.name, self.local_structure)
+        except socket.error:
+            _LOGGER.error(
+                "Connection error logging into the nest web service.")
+
     def thermostats(self):
         """Generate a list of thermostats and their location."""
         try:
@@ -184,15 +196,15 @@ class NestDevice(object):
                 "Connection error logging into the nest web service.")
 
     def smoke_co_alarms(self):
-        """Generate a list of smoke co alarams."""
+        """Generate a list of smoke co alarms."""
         try:
             for structure in self.nest.structures:
                 if structure.name in self.local_structure:
                     for device in structure.smoke_co_alarms:
-                        yield(structure, device)
+                        yield (structure, device)
                 else:
-                    _LOGGER.info("Ignoring structure %s, not in %s",
-                                 structure.name, self.local_structure)
+                    _LOGGER.debug("Ignoring structure %s, not in %s",
+                                  structure.name, self.local_structure)
         except socket.error:
             _LOGGER.error(
                 "Connection error logging into the nest web service.")
@@ -203,10 +215,10 @@ class NestDevice(object):
             for structure in self.nest.structures:
                 if structure.name in self.local_structure:
                     for device in structure.cameras:
-                        yield(structure, device)
+                        yield (structure, device)
                 else:
-                    _LOGGER.info("Ignoring structure %s, not in %s",
-                                 structure.name, self.local_structure)
+                    _LOGGER.debug("Ignoring structure %s, not in %s",
+                                  structure.name, self.local_structure)
         except socket.error:
             _LOGGER.error(
                 "Connection error logging into the nest web service.")
